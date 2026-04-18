@@ -4,7 +4,7 @@ from passlib.context import CryptContext
 
 from database import SessionLocal
 from models import User
-from schemas import UserCreate, UserLogin   # ✅ IMPORTANT CHANGE
+from schemas import UserCreate, UserLogin
 
 router = APIRouter()
 
@@ -27,18 +27,16 @@ def get_db():
 # =========================
 @router.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
-    username = user.username.strip()
-    password = user.password.strip()
-    role = user.role.strip().lower()
 
-    if len(username) < 3:
-        raise HTTPException(status_code=400, detail="Username too short")
+    username = (user.username or "").strip()
+    password = (user.password or "").strip()
+    role = (user.role or "").strip().lower()
 
-    if len(password) < 4:
-        raise HTTPException(status_code=400, detail="Password too short")
+    if not username or len(username) < 3:
+        raise HTTPException(status_code=400, detail="Invalid username")
 
-    if len(password) > 72:
-        raise HTTPException(status_code=400, detail="Password too long")
+    if not password or len(password) < 4:
+        raise HTTPException(status_code=400, detail="Invalid password")
 
     if role not in ["doctor", "patient"]:
         raise HTTPException(status_code=400, detail="Invalid role")
@@ -67,12 +65,13 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 # =========================
-# LOGIN USER (FIXED)
+# LOGIN USER
 # =========================
 @router.post("/login")
-def login(user: UserLogin, db: Session = Depends(get_db)):  # ✅ FIX HERE
-    username = user.username.strip()
-    password = user.password.strip()
+def login(user: UserLogin, db: Session = Depends(get_db)):
+
+    username = (user.username or "").strip()
+    password = (user.password or "").strip()
 
     db_user = db.query(User).filter(User.username == username).first()
 
@@ -87,10 +86,23 @@ def login(user: UserLogin, db: Session = Depends(get_db)):  # ✅ FIX HERE
         "user_id": db_user.id,
         "role": db_user.role
     }
+
+
+# =========================
+# TEST USER (FIXED)
+# =========================
 @router.post("/create-test")
-def create_test_user():
-    db = SessionLocal()
-    user = User(username="admin", password="1234", role="doctor")
+def create_test_user(db: Session = Depends(get_db)):
+
+    hashed_password = pwd_context.hash("1234")
+
+    user = User(
+        username="admin",
+        password=hashed_password,
+        role="doctor"
+    )
+
     db.add(user)
     db.commit()
-    return {"msg": "user created"}
+
+    return {"msg": "test user created"}
