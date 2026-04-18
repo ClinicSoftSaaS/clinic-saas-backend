@@ -23,23 +23,23 @@ def get_db():
 
 
 # =========================
-# REGISTER USER
+# REGISTER USER (FIXED)
 # =========================
 @router.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
 
     username = (user.username or "").strip()
     password = (user.password or "").strip()
-    role = (user.role or "").strip().lower()
+    role = (user.role or "patient").strip().lower()
 
-    if not username or len(username) < 3:
-        raise HTTPException(status_code=400, detail="Invalid username")
+    if len(username) < 3:
+        raise HTTPException(status_code=400, detail="Username too short")
 
-    if not password or len(password) < 4:
-        raise HTTPException(status_code=400, detail="Invalid password")
+    if len(password) < 4:
+        raise HTTPException(status_code=400, detail="Password too short")
 
     if role not in ["doctor", "patient"]:
-        raise HTTPException(status_code=400, detail="Invalid role")
+        role = "patient"
 
     existing = db.query(User).filter(User.username == username).first()
     if existing:
@@ -65,7 +65,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 # =========================
-# LOGIN USER
+# LOGIN USER (FIXED)
 # =========================
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
@@ -89,7 +89,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 
 
 # =========================
-# TEST USER (FIXED)
+# TEST USER (SAFE FIXED)
 # =========================
 @router.post("/create-test")
 def create_test_user(db: Session = Depends(get_db)):
