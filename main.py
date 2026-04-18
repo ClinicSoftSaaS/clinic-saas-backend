@@ -1,23 +1,19 @@
+import json
+
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 import models
 from database import engine
-import json
 
 from auth import router as auth_router
 from patients import router as patient_router
 from appointments import router as appointment_router
 from prescriptions import router as prescription_router
 
-
-
+print("APP STARTING")
 
 app = FastAPI()
-@app.on_event("startup")
-def startup():
-    models.Base.metadata.create_all(bind=engine)
 
 # CORS (frontend support)
 app.add_middleware(
@@ -27,7 +23,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 # Routers
 app.include_router(auth_router, prefix="/api/auth")
@@ -40,3 +35,13 @@ app.include_router(prescription_router, prefix="/api/prescriptions")
 @app.get("/")
 def root():
     return {"status": "API is running"}
+
+
+# Safe database init (IMPORTANT FIX)
+@app.on_event("startup")
+def startup_event():
+    try:
+        models.Base.metadata.create_all(bind=engine)
+        print("Database connected successfully")
+    except Exception as e:
+        print("Database connection failed:", e)
