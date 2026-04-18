@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import models
 from database import engine
-import jason
+import json
 
 from auth import router as auth_router
 from patients import router as patient_router
