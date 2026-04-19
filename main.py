@@ -1,5 +1,7 @@
 import json
-
+import traceback
+from fastapi import Request
+from fastapi.responses import JSONResponse
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,6 +16,19 @@ from prescriptions import router as prescription_router
 print("APP STARTING")
 
 app = FastAPI()
+@app.middleware("http")
+async def log_errors(request: Request, call_next):
+    try:
+        response = await call_next(request)
+        return response
+    except Exception as e:
+        print("🔥 FULL ERROR TRACE:")
+        traceback.print_exc()
+
+        return JSONResponse(
+            status_code=500,
+            content={"detail": str(e)}
+        )
 
 # CORS (frontend support)
 app.add_middleware(

@@ -8,12 +8,12 @@ from schemas import UserCreate, UserLogin
 
 router = APIRouter()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["pbkdf2_sha256"],
+    deprecated="auto"
+)
 
 
-# =========================
-# DB SESSION
-# =========================
 def get_db():
     db = SessionLocal()
     try:
@@ -22,15 +22,20 @@ def get_db():
         db.close()
 
 
-# =========================
-# REGISTER USER (FIXED)
-# =========================
+def hash_password(password: str):
+    return pwd_context.hash(password)  # bcrypt limit safety
+
+
+def verify_password(password: str, hashed: str):
+    return pwd_context.verify(password, hashed)
+
+
 @router.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
 
-    username = (user.username or "").strip()
-    password = (user.password or "").strip()
-    role = (user.role or "patient").strip().lower()
+    username = user.username.strip()
+    password = user.password.strip()[:72]
+    role = user.role.strip().lower()
 
     if len(username) < 3:
         raise HTTPException(status_code=400, detail="Username too short")
@@ -39,17 +44,15 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Password too short")
 
     if role not in ["doctor", "patient"]:
-        role = "patient"
+        raise HTTPException(status_code=400, detail="Invalid role")
 
     existing = db.query(User).filter(User.username == username).first()
     if existing:
         raise HTTPException(status_code=400, detail="User already exists")
 
-    hashed_password = pwd_context.hash(password)
-
     new_user = User(
         username=username,
-        password=hashed_password,
+        password=hash_password(password),
         role=role
     )
 
@@ -64,21 +67,18 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     }
 
 
-# =========================
-# LOGIN USER (FIXED)
-# =========================
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
 
-    username = (user.username or "").strip()
-    password = (user.password or "").strip()
+    username = user.username.strip()
+    password = user.password.strip()
 
     db_user = db.query(User).filter(User.username == username).first()
 
     if not db_user:
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
-    if not pwd_context.verify(password, db_user.password):
+    if not verify_password(password, db_user.password):
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
     return {
@@ -86,23 +86,3 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         "user_id": db_user.id,
         "role": db_user.role
     }
-
-
-# =========================
-# TEST USER (SAFE FIXED)
-# =========================
-@router.post("/create-test")
-def create_test_user(db: Session = Depends(get_db)):
-
-    hashed_password = pwd_context.hash("1234")
-
-    user = User(
-        username="admin",
-        password=hashed_password,
-        role="doctor"
-    )
-
-    db.add(user)
-    db.commit()
-
-    return {"msg": "test user created"}
