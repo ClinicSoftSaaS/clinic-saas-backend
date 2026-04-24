@@ -1,66 +1,68 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import Prescription
-from pydantic import BaseModel
-from datetime import datetime
+from schemas import PrescriptionCreate
 
-router = APIRouter()
+router = APIRouter()  # ❗ NO PREFIX HERE
 
-# =========================
-# DB SESSION
-# =========================
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+        from fastapi import APIRouter, Depends
+        from sqlalchemy.orm import Session
+        from database import SessionLocal
+        from models import Prescription
 
+        router = APIRouter(prefix="/api/prescriptions", tags=["Prescriptions"])
 
-# =========================
-# SCHEMA (IMPORTANT FIX)
-# =========================
-class PrescriptionCreate(BaseModel):
-    patient_id: int
-    doctor_id: int
-    medicines: str
-    notes: str
+        # DB
+        def get_db():
+            db = SessionLocal()
+            try:
+                yield db
+            finally:
+                db.close()
 
+        # =========================
+        # GET ALL PRESCRIPTIONS (MISSING PART)
+        # =========================
+        @router.get("/")
+        def get_prescriptions(db: Session = Depends(get_db)):
+            return db.query(Prescription).all()
 
-# =========================
-# CREATE PRESCRIPTION
-# =========================
+        # =========================
+        # CREATE PRESCRIPTION
+        # =========================
+        @router.post("/")
+        def create_prescription(p: PrescriptionCreate, db: Session = Depends(get_db)):
+            new_prescription = Prescription(
+                patient_id=p.patient_id,
+                doctor_id=p.doctor_id,
+                medicines=p.medicines,
+                notes=p.notes
+            )
+
+            db.add(new_prescription)
+            db.commit()
+            db.refresh(new_prescription)
+
+            return new_prescription
+
 @router.post("/")
-def add_prescription(data: PrescriptionCreate, db: Session = Depends(get_db)):
-    try:
-        new_p = Prescription(
-            patient_id=data.patient_id,
-            doctor_id=data.doctor_id,
-            medicines=data.medicines,
-            notes=data.notes,
-            date=datetime.utcnow()
-        )
+def create_prescription(p: PrescriptionCreate, db: Session = Depends(get_db)):
+    new_prescription = Prescription(
+        patient_id=p.patient_id,
+        doctor_id=p.doctor_id,
+        medicines=p.medicines,
+        notes=p.notes
+    )
 
-        db.add(new_p)
-        db.commit()
-        db.refresh(new_p)
+    db.add(new_prescription)
+    db.commit()
+    db.refresh(new_prescription)
 
-        return {
-            "message": "Prescription saved",
-            "id": new_p.id
-        }
-
-    except Exception as e:
-        print("Prescription Error:", e)
-        raise HTTPException(status_code=500, detail="Failed to save prescription")
-
-
-# =========================
-# GET PRESCRIPTIONS
-# =========================
-@router.get("/{patient_id}")
-def get_prescriptions(patient_id: int, db: Session = Depends(get_db)):
-    return db.query(Prescription).filter(
-        Prescription.patient_id == patient_id
-    ).all()
+    return new_prescription

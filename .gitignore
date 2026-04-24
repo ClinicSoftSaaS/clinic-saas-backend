@@ -1,5 +1,28 @@
+# Python
 __pycache__/
 *.pyc
-dental.db
+*.pyo
+*.pyd
+
+# Virtual environment
 .venv/
+venv/
+
+# Database
+dental.db
+*.sqlite3
+
+# Environment variables
 .env
+
+# Node / Frontend
+node_modules/
+build/
+dist/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

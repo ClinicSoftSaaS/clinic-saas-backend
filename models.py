@@ -17,7 +17,7 @@ class Patient(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
-    phone = Column(String)
+    phone = Column(String, unique=True, index=True)
     age = Column(Integer)
 
 
