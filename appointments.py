@@ -4,9 +4,11 @@ from database import SessionLocal
 from models import Appointment
 from schemas import AppointmentCreate
 
-router = APIRouter()
+router = APIRouter(prefix="/api/appointments", tags=["Appointments"])
 
-# ================= DB =================
+# =========================
+# DB SESSION
+# =========================
 def get_db():
     db = SessionLocal()
     try:
@@ -14,19 +16,21 @@ def get_db():
     finally:
         db.close()
 
-# ================= CREATE =================
+# =========================
+# CREATE APPOINTMENT
+# =========================
 @router.post("/")
 def add_appointment(a: AppointmentCreate, db: Session = Depends(get_db)):
 
-    if not a.patient_id or not a.doctor_id:
+    if not a.patient_id or not a.doctor_id or not a.date:
         raise HTTPException(
             status_code=400,
-            detail="patient_id and doctor_id are required"
+            detail="patient_id, doctor_id and date are required"
         )
 
     appointment = Appointment(
-        patient_id=int(a.patient_id),
-        doctor_id=int(a.doctor_id),
+        patient_id=int(a.patient_id),   # 🔥 FORCE INTEGER
+        doctor_id=int(a.doctor_id),     # 🔥 FORCE INTEGER
         date=a.date
     )
 
@@ -36,7 +40,19 @@ def add_appointment(a: AppointmentCreate, db: Session = Depends(get_db)):
 
     return appointment
 
-# ================= GET ALL (MISSING PART) =================
+# =========================
+# GET ALL APPOINTMENTS (FIXED)
+# =========================
 @router.get("/")
 def get_appointments(db: Session = Depends(get_db)):
-    return db.query(Appointment).all()
+    appointments = db.query(Appointment).all()
+
+    return [
+        {
+            "id": a.id,
+            "patient_id": a.patient_id,
+            "doctor_id": a.doctor_id,
+            "date": a.date
+        }
+        for a in appointments
+    ]
