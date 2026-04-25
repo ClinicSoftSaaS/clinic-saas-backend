@@ -6,9 +6,7 @@ from schemas import AppointmentCreate
 
 router = APIRouter()
 
-# =========================
-# DB SESSION
-# =========================
+# ================= DB =================
 def get_db():
     db = SessionLocal()
     try:
@@ -16,14 +14,10 @@ def get_db():
     finally:
         db.close()
 
-
-# =========================
-# CREATE APPOINTMENT (FIXED)
-# =========================
+# ================= CREATE =================
 @router.post("/")
 def add_appointment(a: AppointmentCreate, db: Session = Depends(get_db)):
 
-    # 🔥 VALIDATION (VERY IMPORTANT)
     if not a.patient_id or not a.doctor_id:
         raise HTTPException(
             status_code=400,
@@ -42,21 +36,7 @@ def add_appointment(a: AppointmentCreate, db: Session = Depends(get_db)):
 
     return appointment
 
-
-# =========================
-# GET ALL APPOINTMENTS
-# =========================
-@router.post("/")
-def add_appointment(a: AppointmentCreate, db: Session = Depends(get_db)):
-
-    appointment = Appointment(
-        patient_id=int(a.patient_id),
-        doctor_id=int(a.doctor_id),
-        date=a.date
-    )
-
-    db.add(appointment)
-    db.commit()
-    db.refresh(appointment)
-
-    return appointment
+# ================= GET ALL (MISSING PART) =================
+@router.get("/")
+def get_appointments(db: Session = Depends(get_db)):
+    return db.query(Appointment).all()
