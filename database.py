@@ -2,31 +2,27 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Get DATABASE_URL from Render environment
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 DATABASE_URL = os.getenv("DATABASE_URL")
+print("DATABASE_URL =", DATABASE_URL)
 
-# Fallback (ONLY for local testing)
 if not DATABASE_URL:
-    DATABASE_URL = "sqlite:///./dental.db"
+    DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'dental.db')}"
 
-# Create engine
-if DATABASE_URL.startswith("postgresql"):
-    engine = create_engine(
-        DATABASE_URL,
-        pool_pre_ping=True
-    )
-else:
-    engine = create_engine(
-        DATABASE_URL,
-        connect_args={"check_same_thread": False}
-    )
+# Render PostgreSQL compatibility
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Session
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True
+)
+
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
     bind=engine
 )
 
-# Base model
 Base = declarative_base()
