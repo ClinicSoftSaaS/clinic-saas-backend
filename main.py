@@ -2,11 +2,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
-from database import engine
-
 
 import traceback
-
 import models
 from database import engine
 
@@ -18,13 +15,8 @@ from prescriptions import router as prescription_router
 from subscription_manual import router as subscription_router
 from payments import router as payments_router
 
-
 app = FastAPI()
 
-# ================= DB INIT =================
-models.Base.metadata.create_all(bind=engine)
-
-# ================= CORS =================
 # ================= CORS =================
 app.add_middleware(
     CORSMiddleware,
@@ -46,9 +38,11 @@ app.include_router(subscription_router, prefix="/api/subscription")
 app.include_router(payments_router, prefix="/api/payments")
 
 
-from sqlalchemy import text
-from database import engine
+# ================= DB INIT =================
+models.Base.metadata.create_all(bind=engine)
 
+
+# ================= MIGRATION ENDPOINT =================
 @app.get("/migrate-patients")
 def migrate_patients():
     with engine.begin() as conn:
