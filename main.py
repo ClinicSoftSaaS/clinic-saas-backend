@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from database import engine
 
 
 import traceback
@@ -42,6 +44,18 @@ app.include_router(appointment_router, prefix="/api/appointments")
 app.include_router(prescription_router, prefix="/api/prescriptions")
 app.include_router(subscription_router, prefix="/api/subscription")
 app.include_router(payments_router, prefix="/api/payments")
+
+
+from sqlalchemy import text
+from database import engine
+
+@app.get("/migrate-patients")
+def migrate_patients():
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE patients ADD COLUMN IF NOT EXISTS gender VARCHAR"))
+        conn.execute(text("ALTER TABLE patients ADD COLUMN IF NOT EXISTS address VARCHAR"))
+
+    return {"status": "patients table updated successfully"}
 
 
 # ================= ROOT =================
