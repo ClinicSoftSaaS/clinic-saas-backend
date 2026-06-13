@@ -6,20 +6,37 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+# =========================
+# LOCAL SQLITE
+# =========================
 if not DATABASE_URL:
-    raise Exception("DATABASE_URL is not set in Render environment variables!")
+    DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'clinic.db')}"
 
-print("DATABASE_URL loaded successfully")
+    print("Using local SQLite database")
 
-# Fix for old postgres format
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False}
+    )
 
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-    connect_args={"sslmode": "require"}  # IMPORTANT for Render
-)
+# =========================
+# RENDER POSTGRES
+# =========================
+else:
+    print("Using Render PostgreSQL database")
+
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace(
+            "postgres://",
+            "postgresql://",
+            1
+        )
+
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+        connect_args={"sslmode": "require"}
+    )
 
 SessionLocal = sessionmaker(
     autocommit=False,

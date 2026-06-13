@@ -7,7 +7,6 @@ from database import SessionLocal
 from models import Patient, Appointment, Prescription
 from schemas import PatientCreate
 from security import get_current_user
-
 from subscription_guard import check_subscription
 
 router = APIRouter()
@@ -35,7 +34,6 @@ def add_patient(
 ):
     clinic_id = current_user["clinic_id"]
 
-    # 🔐 SUBSCRIPTION CHECK
     check_subscription(db, clinic_id)
 
     try:
@@ -43,6 +41,8 @@ def add_patient(
             name=p.name,
             phone=p.phone,
             age=p.age,
+            gender=p.gender,       # ✅ FIXED
+            address=p.address,     # ✅ FIXED
             clinic_id=clinic_id
         )
 
@@ -80,11 +80,9 @@ def get_patients(
 
     check_subscription(db, clinic_id)
 
-    patients = db.query(Patient).filter(
+    return db.query(Patient).filter(
         Patient.clinic_id == clinic_id
     ).all()
-
-    return patients
 
 
 # =========================
@@ -106,10 +104,7 @@ def search_by_phone(
     ).first()
 
     if not patient:
-        raise HTTPException(
-            status_code=404,
-            detail="Patient not found"
-        )
+        raise HTTPException(status_code=404, detail="Patient not found")
 
     return patient
 
@@ -133,10 +128,7 @@ def search_by_id(
     ).first()
 
     if not patient:
-        raise HTTPException(
-            status_code=404,
-            detail="Patient not found"
-        )
+        raise HTTPException(status_code=404, detail="Patient not found")
 
     return patient
 
@@ -160,10 +152,7 @@ def patient_history(
     ).first()
 
     if not patient:
-        raise HTTPException(
-            status_code=404,
-            detail="Patient not found"
-        )
+        raise HTTPException(status_code=404, detail="Patient not found")
 
     appointments = db.query(Appointment).filter(
         Appointment.patient_id == patient_id,
@@ -180,7 +169,9 @@ def patient_history(
             "id": patient.id,
             "name": patient.name,
             "phone": patient.phone,
-            "age": patient.age
+            "age": patient.age,
+            "gender": patient.gender,
+            "address": patient.address
         },
         "appointments": [
             {

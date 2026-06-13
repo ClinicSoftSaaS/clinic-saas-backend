@@ -40,6 +40,10 @@ class PatientCreate(BaseModel):
 
     age: int
 
+    gender: str
+
+    address: str
+
 
 # =========================
 # APPOINTMENT SCHEMAS

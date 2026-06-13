@@ -47,6 +47,9 @@ class User(Base):
 # =========================
 # PATIENT TABLE
 # =========================
+# =========================
+# PATIENT TABLE
+# =========================
 class Patient(Base):
     __tablename__ = "patients"
 
@@ -56,6 +59,10 @@ class Patient(Base):
     name = Column(String)
     phone = Column(String, index=True)
     age = Column(Integer)
+
+    # NEW FIELDS
+    gender = Column(String)
+    address = Column(String)
 
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
